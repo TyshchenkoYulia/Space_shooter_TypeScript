@@ -25,13 +25,13 @@ let isStartGame: boolean = false;
 
 const starCount: number = 100;
 
-let spaceship: Sprite | null = null;
+let spaceship: Sprite;
 const shipSpeed: number = 4;
 let moveLeft: boolean = false;
 let moveRight: boolean = false;
 
 const asteroidsLeft: Sprite[] = [];
-const asteroidCount: number = 1;
+const asteroidCount: number = 3;
 
 let countBullets: Graphics[] = [];
 const maxBullets: number = 10;
@@ -42,12 +42,12 @@ let timerInterval: number | null = null;
 
 let restartButton: number | null;
 
-let boss: Sprite | null = null;
+let boss: Sprite | null;
 const bossSpeed: number = 1;
 let bossDirection: number = 1;
 let bossPoint: number = 4;
-let lifePoint: number;
-let lifePointBar: Container | null = null;
+let lifePoint: Graphics;
+let lifePointBar: Container;
 
 // =====================================================================
 
@@ -117,7 +117,7 @@ function setupSpaceShip(): void {
       moveRight = true;
     }
     if (event.code === "Space") {
-      fireBullet(spaceship, app);
+      fireBullet();
     }
   });
 
@@ -191,7 +191,6 @@ async function startTimer(): Promise<void> {
     if (timeleft <= 0) {
       clearInterval(timerInterval);
       onEndLoseGame();
-
       // console.log("finish timer");
     }
 
@@ -199,7 +198,7 @@ async function startTimer(): Promise<void> {
       clearInterval(timerInterval);
     }
 
-    if (asteroidsLeft <= 0) {
+    if (asteroidsLeft.length <= 0) {
       clearInterval(timerInterval);
     }
   }, 1000);
@@ -226,9 +225,8 @@ function fireBullet(): void {
   }
 
   if (bulletsleft <= 0) {
-    // console.log("bullets finished");
     onEndLoseGame();
-
+    // console.log("bullets finished");
     return;
   }
 
@@ -295,7 +293,7 @@ function addLoseText(app: Application): void {
     style: {
       fontFamily: "Arial",
       fontSize: 54,
-      fontWeight: 700,
+      fontWeight: "700",
       fill: "rgb(164, 6, 6)",
     },
   });
@@ -318,7 +316,7 @@ function addWinText(app: Application): void {
     style: {
       fontFamily: "Arial",
       fontSize: 54,
-      fontWeight: 700,
+      fontWeight: "700",
       fill: "rgb(7, 120, 141)",
     },
   });
@@ -340,7 +338,7 @@ function firstLevelText(): void {
     style: {
       fontFamily: "Arial",
       fontSize: 84,
-      fontWeight: 700,
+      fontWeight: "700",
       fill: "rgb(7, 120, 141)",
     },
   });
@@ -360,7 +358,7 @@ function secondLevelText(): void {
     style: {
       fontFamily: "Arial",
       fontSize: 84,
-      fontWeight: 700,
+      fontWeight: "700",
       fill: "rgb(7, 120, 141)",
     },
   });
@@ -420,7 +418,7 @@ function onEndWinGame() {
 }
 
 // описуємо логіку попадання в астероїд
-function isRectCollision(rect1, rect2): boolean {
+function isRectCollision(rect1: any, rect2: any): boolean {
   if (!rect1 || !rect2) {
     return false;
   }
@@ -445,7 +443,6 @@ function checkCollisions(app: Application): void {
 
           if (asteroidsLeft.length === 0) {
             // console.log("win");
-
             onEndWinGame();
           }
         }
@@ -494,11 +491,12 @@ function onNextLevel(): void {
 
   setTimeout(() => {
     secondLevelText();
-    resetGameState(app);
+    resetGameState();
   }, 1000);
 
   setTimeout(() => {
     addBoss("/src/img/boss.webp");
+    startTimer();
     addBullets();
   }, 1500);
 
@@ -608,6 +606,14 @@ function shootBossBullet(): void {
 
           stopBoss();
         }, 500);
+
+        // if (timeleft <= 0) {
+        //   setTimeout(() => {
+        //     stopBoss();
+        //     clearTimeout(restartButton!);
+        //     app.stage.removeChild(spaceship!);
+        //   }, 1000);
+        // }
       }
 
       // Зіткнення з кулями корабля
@@ -646,7 +652,7 @@ function shootBossBullet(): void {
 }
 
 // додаємо логіку гри корабля з босом
-function checkBossCollision(bossBullet): void {
+function checkBossCollision(): void {
   countBullets.forEach((bullet) => {
     if (bullet.visible && isRectCollision(bullet, boss)) {
       bullet.visible = false;
@@ -661,7 +667,6 @@ function checkBossCollision(bossBullet): void {
         setTimeout(() => {
           app.stage.removeChild(boss!);
           app.stage.removeChild(lifePointBar!);
-          app.stage.removeChild(bossBullet);
           app.stage.removeChild(spaceship!);
           boss = null;
           onEndWinGame();
