@@ -44,11 +44,15 @@ let restartButton: number | undefined;
 
 let boss: Sprite;
 // let bossBullet: Graphics;
+const bossBullets: Graphics[] = [];
 const bossSpeed: number = 1;
 let bossDirection: number = 1;
 let bossPoint: number = 4;
 let lifePoint: Graphics;
 let lifePointBar: Container;
+let shootInterval: number | undefined;
+let bossBulletIntervals: number[] = [];
+
 // let bossBulletInterval: number | undefined;
 
 // =====================================================================
@@ -314,7 +318,7 @@ function addWinText(app: Application): void {
     },
   });
 
-  winText.x = app.screen.width / 2 - 130;
+  winText.x = app.screen.width / 2 - 120;
   winText.y = (0.3 * app.screen.height) / 2;
 
   app.stage.addChild(winText);
@@ -367,18 +371,13 @@ function secondLevelText(): void {
 
 // ініціалізуємо початок гри / level 1
 async function onStartGame(): Promise<void> {
-  // isStartGame = true;
-  // console.log("game started");
-
-  resetGameState();
-  // await startTimer();
   setTimeout(() => {
     firstLevelText();
+    resetGameState();
   }, 500);
 
   setTimeout(() => {
     addAsteroids("/src/img/asteroid.png");
-    // addBullets();
     setupSpaceShip();
   }, 1500);
 
@@ -391,9 +390,6 @@ async function onStartGame(): Promise<void> {
 function onEndLoseGame(): void {
   setTimeout(() => {
     removeAsteroids(app);
-
-    // clearInterval(bossBulletInterval);
-    // app.stage.removeChild(bossBullet);
   }, 1000);
 
   setTimeout(() => {
@@ -404,6 +400,7 @@ function onEndLoseGame(): void {
     restartGameButton();
   }, 2000);
 
+  stopBoss();
   window.removeEventListener("keydown", handleKeyDown);
   window.removeEventListener("keyup", handleKeyUp);
 }
@@ -418,6 +415,7 @@ function onEndWinGame() {
     nextLevelButton.classList.remove("hidden");
   }, 2000);
 
+  stopBoss();
   window.removeEventListener("keydown", handleKeyDown);
   window.removeEventListener("keyup", handleKeyUp);
 }
@@ -462,12 +460,13 @@ function resetGameState(): void {
   if (timerInterval) {
     clearInterval(timerInterval);
   }
+  setTimeout(() => {
+    timeleft = 60;
 
-  timeleft = 60;
-
-  timerInterval = setInterval(() => {
-    timeleft--;
-    timer.textContent = `Time: ${timeleft}`;
+    timerInterval = setInterval(() => {
+      timeleft--;
+      timer.textContent = `Time: ${timeleft}`;
+    }, 1000);
 
     if (timeleft <= 0) {
       clearInterval(timerInterval!);
@@ -500,20 +499,21 @@ function resetGameState(): void {
 
 function onNextLevel(): void {
   // console.log("next level started");
+
   resetGameState();
 
   setTimeout(() => {
     secondLevelText();
-  }, 1000);
+  }, 500);
 
   setTimeout(() => {
     addBoss("/src/img/boss.webp");
-  }, 1500);
+  }, 1000);
 
   setTimeout(() => {
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
-  }, 3000);
+  }, 2000);
 
   app.ticker.add(() => {
     if (boss) {
@@ -538,7 +538,7 @@ async function addBoss(imageBoss: string): Promise<void> {
     addLivePointBoss();
     moveBoss();
     shootBossBullet();
-  }, 2000);
+  }, 1000);
 }
 
 // додаємо шкалу життя
@@ -593,7 +593,7 @@ function moveBoss(): void {
 
 // додаємо логіку пострілів боса
 function shootBossBullet(): void {
-  setInterval(() => {
+  shootInterval = setInterval(() => {
     if (!boss) {
       return;
     }
@@ -605,6 +605,7 @@ function shootBossBullet(): void {
     bossBullet.y = boss.y + boss.height / 2;
 
     app.stage.addChild(bossBullet);
+    bossBullets.push(bossBullet);
 
     const bossBulletInterval = setInterval(() => {
       bossBullet.y += 5;
@@ -612,6 +613,7 @@ function shootBossBullet(): void {
       if (bossBullet.y > app.screen.height) {
         clearInterval(bossBulletInterval);
         app.stage.removeChild(bossBullet);
+
         return;
       }
 
@@ -619,13 +621,16 @@ function shootBossBullet(): void {
         setTimeout(() => {
           onEndLoseGame();
           stopBoss();
-          clearInterval(bossBulletInterval);
-          clearTimeout(restartButton);
           app.stage.removeChild(bossBullet);
-          app.stage.removeChild(spaceship);
-        }, 1000);
+          clearInterval(bossBulletInterval);
+          clearInterval(timerInterval);
 
-        return;
+          app.stage.removeChild(spaceship);
+
+          if (startButton) {
+            startButton.remove();
+          }
+        }, 1000);
       }
 
       // Зіткнення з кулями корабля
@@ -641,6 +646,7 @@ function shootBossBullet(): void {
           if (app.stage.children.includes(bullet) && bullet.visible) {
             app.stage.removeChild(bullet);
           }
+
           if (app.stage.children.includes(bossBullet) && bossBullet.visible) {
             app.stage.removeChild(bossBullet);
           }
@@ -652,16 +658,34 @@ function shootBossBullet(): void {
 
       // Зіткнення куль боса з кораблем
       if (bossBullet && isRectCollision(bossBullet, spaceship)) {
+        if (timerInterval) {
+          clearInterval(timerInterval);
+          timerInterval = undefined;
+        }
+
+        if (startButton) {
+          startButton.remove();
+        }
+
+        bossBullets.forEach((bullet) => {
+          app.stage.removeChild(bullet);
+        });
+        bossBullets.length = 0;
+
+        if (bossBullet) {
+          app.stage.removeChild(bossBullet);
+        }
         onEndLoseGame();
-        clearInterval(timerInterval);
         stopBoss();
+
         clearInterval(bossBulletInterval);
-        clearTimeout(restartButton);
-        app.stage.removeChild(bossBullet);
         app.stage.removeChild(spaceship);
       }
     }, 100);
+
+    bossBulletIntervals.push(bossBulletInterval);
   }, 2000);
+  bossBulletIntervals.push(shootInterval);
 }
 
 // додаємо логіку гри корабля з босом
@@ -678,10 +702,24 @@ function checkBossCollision(): void {
 
       if (bossPoint <= 0) {
         setTimeout(() => {
+          if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = undefined;
+          }
+          stopBoss();
           app.stage.removeChild(boss);
           app.stage.removeChild(lifePointBar);
           app.stage.removeChild(spaceship);
           onEndWinGame();
+
+          if (startButton) {
+            startButton.remove();
+          }
+
+          bossBullets.forEach((bullet) => {
+            app.stage.removeChild(bullet);
+          });
+          bossBullets.length = 0;
         }, 1000);
       }
     }
@@ -694,6 +732,14 @@ function stopBoss(): void {
     if (boss) {
       app.stage.removeChild(boss);
       app.stage.removeChild(lifePointBar);
+    }
+
+    bossBulletIntervals.forEach((intervalId) => clearInterval(intervalId));
+    bossBulletIntervals = [];
+
+    if (shootInterval !== undefined) {
+      clearInterval(shootInterval);
+      shootInterval = undefined;
     }
   }, 1000);
 }
