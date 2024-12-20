@@ -36,19 +36,20 @@ const asteroidCount: number = 1;
 let countBullets: Graphics[] = [];
 const maxBullets: number = 10;
 let bulletsleft: number = maxBullets;
-// let bulletInterval: number;
 
 let timeleft: number = 60;
-let timerInterval: number | null = null;
+let timerInterval: number | undefined;
 
 let restartButton: number | undefined;
 
 let boss: Sprite;
+// let bossBullet: Graphics;
 const bossSpeed: number = 1;
 let bossDirection: number = 1;
 let bossPoint: number = 4;
 let lifePoint: Graphics;
 let lifePointBar: Container;
+// let bossBulletInterval: number | undefined;
 
 // =====================================================================
 
@@ -219,28 +220,31 @@ function fireBullet(): void {
 
   const availableBullet = countBullets.find((bullet) => !bullet.visible);
 
-  if (availableBullet) {
-    availableBullet.visible = true;
-    bulletsleft--;
-    bullets.textContent = `Bullets: ${bulletsleft} / ${maxBullets}`;
-
-    if (bulletsleft <= 0) {
-      // console.log("bullets finished");
-      onEndLoseGame();
-      return;
-    }
-    availableBullet.x = spaceship.x;
-    availableBullet.y = spaceship.y - 50;
-
-    const bulletInterval = setInterval(() => {
-      availableBullet.y -= 10;
-
-      if (availableBullet.y < 0) {
-        clearInterval(bulletInterval);
-        availableBullet.visible = false;
-      }
-    }, 20);
+  if (!availableBullet) {
+    return;
   }
+
+  availableBullet.visible = true;
+  bulletsleft--;
+  bullets.textContent = `Bullets: ${bulletsleft} / ${maxBullets}`;
+
+  availableBullet.x = spaceship.x;
+  availableBullet.y = spaceship.y - 50;
+
+  const bulletInterval = setInterval(() => {
+    availableBullet.y -= 10;
+
+    if (availableBullet.y < 0) {
+      clearInterval(bulletInterval);
+      availableBullet.visible = false;
+
+      if (bulletsleft <= 0) {
+        // console.log("bullets finished");
+        onEndLoseGame();
+        return;
+      }
+    }
+  }, 20);
 }
 
 // кнопка Start New Game
@@ -388,7 +392,8 @@ function onEndLoseGame(): void {
   setTimeout(() => {
     removeAsteroids(app);
 
-    // clearInterval(timerInterval);
+    // clearInterval(bossBulletInterval);
+    // app.stage.removeChild(bossBullet);
   }, 1000);
 
   setTimeout(() => {
@@ -458,9 +463,7 @@ function resetGameState(): void {
     clearInterval(timerInterval);
   }
 
-  // curentTimeLeft = timeleft;
   timeleft = 60;
-  // timer.textContent = `Time: ${timeleft}`;
 
   timerInterval = setInterval(() => {
     timeleft--;
@@ -505,8 +508,6 @@ function onNextLevel(): void {
 
   setTimeout(() => {
     addBoss("/src/img/boss.webp");
-    // startTimer();
-    // addBullets();
   }, 1500);
 
   setTimeout(() => {
@@ -564,7 +565,7 @@ function addLivePointBoss(): void {
 // Оновлення шкали поінтів
 function updateBossPoints(): void {
   const currentPoints = lifePointBar.children;
-  if (currentPoints.length > bossPoint) {
+  if (bossPoint >= 0 && currentPoints.length > bossPoint) {
     lifePointBar.removeChildAt(currentPoints.length - 1);
   }
 }
@@ -614,26 +615,17 @@ function shootBossBullet(): void {
         return;
       }
 
-      if (bulletsleft <= 0) {
-        setInterval(() => {
+      if (bulletsleft <= 0 || timeleft <= 0) {
+        setTimeout(() => {
+          onEndLoseGame();
+          stopBoss();
           clearInterval(bossBulletInterval);
           clearTimeout(restartButton);
           app.stage.removeChild(bossBullet);
           app.stage.removeChild(spaceship);
-          stopBoss();
         }, 1000);
 
-        setTimeout(() => {
-          addLoseText(app);
-        }, 2000);
-      }
-
-      if (timeleft <= 0) {
-        setTimeout(() => {
-          stopBoss();
-          clearTimeout(restartButton);
-          app.stage.removeChild(spaceship);
-        }, 1000);
+        return;
       }
 
       // Зіткнення з кулями корабля
@@ -661,6 +653,7 @@ function shootBossBullet(): void {
       // Зіткнення куль боса з кораблем
       if (bossBullet && isRectCollision(bossBullet, spaceship)) {
         onEndLoseGame();
+        clearInterval(timerInterval);
         stopBoss();
         clearInterval(bossBulletInterval);
         clearTimeout(restartButton);
@@ -688,7 +681,6 @@ function checkBossCollision(): void {
           app.stage.removeChild(boss);
           app.stage.removeChild(lifePointBar);
           app.stage.removeChild(spaceship);
-          // boss = null;
           onEndWinGame();
         }, 1000);
       }
