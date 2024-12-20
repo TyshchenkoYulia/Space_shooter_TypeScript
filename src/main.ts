@@ -21,7 +21,6 @@ const timer = document.getElementById("timer") as HTMLElement;
 const app = new Application();
 
 // =====================================================================
-// let isStartGame: boolean = false;
 
 const starCount: number = 100;
 
@@ -31,7 +30,7 @@ let moveLeft: boolean = false;
 let moveRight: boolean = false;
 
 const asteroidsLeft: Sprite[] = [];
-const asteroidCount: number = 1;
+const asteroidCount: number = 5;
 
 let countBullets: Graphics[] = [];
 const maxBullets: number = 10;
@@ -40,10 +39,7 @@ let bulletsleft: number = maxBullets;
 let timeleft: number = 60;
 let timerInterval: number | undefined;
 
-let restartButton: number | undefined;
-
 let boss: Sprite;
-// let bossBullet: Graphics;
 const bossBullets: Graphics[] = [];
 const bossSpeed: number = 1;
 let bossDirection: number = 1;
@@ -52,8 +48,6 @@ let lifePoint: Graphics;
 let lifePointBar: Container;
 let shootInterval: number | undefined;
 let bossBulletIntervals: number[] = [];
-
-// let bossBulletInterval: number | undefined;
 
 // =====================================================================
 
@@ -165,8 +159,6 @@ function moveSpaceShip(): void {
 }
 // додаємо астероїди
 async function addAsteroids(imageAsteroid: string): Promise<void> {
-  // isStartGame = true;
-
   const asteroidTexture = await Assets.load(imageAsteroid);
 
   function createAsteroid(): Sprite {
@@ -190,8 +182,6 @@ async function addAsteroids(imageAsteroid: string): Promise<void> {
 
 // Видалення всіх астероїдів при закінченні гри
 function removeAsteroids(app: Application): void {
-  // console.log("remove asteroids");
-
   if (asteroidsLeft.length > 0) {
     asteroidsLeft.forEach((asteroid) => {
       if (app.stage.children.includes(asteroid)) {
@@ -243,7 +233,6 @@ function fireBullet(): void {
       availableBullet.visible = false;
 
       if (bulletsleft <= 0) {
-        // console.log("bullets finished");
         onEndLoseGame();
         return;
       }
@@ -253,8 +242,6 @@ function fireBullet(): void {
 
 // кнопка Start New Game
 function onClickStartGameButton(): void {
-  // isStartGame = true;
-
   startButton.addEventListener("click", () => {
     startButton.classList.toggle("hidden");
 
@@ -283,8 +270,6 @@ function onClickNextLevelButton(): void {
 
 // створюємо текст
 function addLoseText(app: Application): void {
-  // isStartGame = false;
-
   const loseText = new Text({
     text: "YOU LOSE",
     style: {
@@ -306,8 +291,6 @@ function addLoseText(app: Application): void {
 }
 
 function addWinText(app: Application): void {
-  // isStartGame = false;
-
   const winText = new Text({
     text: "YOU WIN",
     style: {
@@ -396,7 +379,7 @@ function onEndLoseGame(): void {
     addLoseText(app);
   }, 1500);
 
-  restartButton = setTimeout(() => {
+  setTimeout(() => {
     restartGameButton();
   }, 2000);
 
@@ -408,7 +391,6 @@ function onEndLoseGame(): void {
 function onEndWinGame() {
   setTimeout(() => {
     addWinText(app);
-    // clearInterval(timerInterval);
   }, 1500);
 
   setTimeout(() => {
@@ -445,7 +427,6 @@ function checkCollisions(app: Application): void {
           bullet.y = app.screen.height - 60;
 
           if (asteroidsLeft.length === 0) {
-            // console.log("win");
             clearInterval(timerInterval!);
             onEndWinGame();
           }
@@ -498,8 +479,6 @@ function resetGameState(): void {
 //=============================== start level 2 ===================================
 
 function onNextLevel(): void {
-  // console.log("next level started");
-
   resetGameState();
 
   setTimeout(() => {
