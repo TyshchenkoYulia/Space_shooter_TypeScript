@@ -233,11 +233,28 @@ function fireBullet(): void {
       availableBullet.visible = false;
 
       if (bulletsleft <= 0) {
+        clearInterval(timerInterval);
+        timerInterval = undefined;
+
         onEndLoseGame();
         return;
       }
     }
   }, 20);
+}
+// додаємо таймер
+function addTimer(): void {
+  timeleft = 60;
+  timerInterval = setInterval(() => {
+    timeleft--;
+
+    timer.textContent = `Time: ${timeleft}`;
+    if (timeleft <= 0) {
+      clearInterval(timerInterval);
+      onEndLoseGame();
+      timerInterval = undefined;
+    }
+  }, 1000);
 }
 
 // кнопка Start New Game
@@ -443,11 +460,7 @@ function resetGameState(): void {
   }
   setTimeout(() => {
     timeleft = 60;
-
-    timerInterval = setInterval(() => {
-      timeleft--;
-      timer.textContent = `Time: ${timeleft}`;
-    }, 1000);
+    addTimer();
 
     if (timeleft <= 0) {
       clearInterval(timerInterval!);
