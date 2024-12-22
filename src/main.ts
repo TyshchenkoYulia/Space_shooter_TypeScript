@@ -698,20 +698,22 @@ function checkBossCollision(): void {
             clearInterval(timerInterval);
             timerInterval = undefined;
           }
+
           stopBoss();
           app.stage.removeChild(boss);
           app.stage.removeChild(lifePointBar);
           app.stage.removeChild(spaceship);
-          onEndWinGame();
-
-          if (startButton) {
-            startButton.remove();
-          }
 
           bossBullets.forEach((bullet) => {
             app.stage.removeChild(bullet);
           });
           bossBullets.length = 0;
+
+          if (startButton) {
+            startButton.remove();
+          }
+
+          onEndWinGame();
         }, 1000);
       }
     }
@@ -733,5 +735,10 @@ function stopBoss(): void {
       clearInterval(shootInterval);
       shootInterval = undefined;
     }
+
+    bossBullets.forEach((bullet) => {
+      app.stage.removeChild(bullet);
+    });
+    bossBullets.length = 0;
   }, 1000);
 }
