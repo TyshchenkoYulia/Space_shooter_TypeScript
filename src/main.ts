@@ -28,6 +28,7 @@ let spaceship: Sprite;
 const shipSpeed: number = 4;
 let moveLeft: boolean = false;
 let moveRight: boolean = false;
+let isSpacePressed: boolean = false;
 
 const asteroidsLeft: Sprite[] = [];
 const asteroidCount: number = 5;
@@ -136,7 +137,14 @@ function handleKeyDown(event: KeyboardEvent): void {
     moveRight = true;
   }
   if (event.code === "Space") {
+    if (isSpacePressed) {
+      return;
+    }
     fireBullet();
+    isSpacePressed = true;
+    setTimeout(() => {
+      isSpacePressed = false;
+    }, 300);
   }
 }
 
@@ -146,6 +154,9 @@ function handleKeyUp(event: KeyboardEvent): void {
   }
   if (event.code === "ArrowRight") {
     moveRight = false;
+  }
+  if (event.code === "Space") {
+    isSpacePressed = false;
   }
 }
 
@@ -211,37 +222,40 @@ function fireBullet(): void {
   if (!spaceship) {
     return;
   }
+  if (countBullets.length > 0) {
+    const availableBullet = countBullets.find((bullet) => !bullet.visible);
 
-  const availableBullet = countBullets.find((bullet) => !bullet.visible);
-
-  if (!availableBullet) {
-    return;
-  }
-
-  availableBullet.visible = true;
-  bulletsleft--;
-  bullets.textContent = `Bullets: ${bulletsleft} / ${maxBullets}`;
-
-  availableBullet.x = spaceship.x;
-  availableBullet.y = spaceship.y - 50;
-
-  const bulletInterval = setInterval(() => {
-    availableBullet.y -= 10;
-
-    if (availableBullet.y < 0) {
-      clearInterval(bulletInterval);
-      availableBullet.visible = false;
-
-      if (bulletsleft <= 0) {
-        clearInterval(timerInterval);
-        timerInterval = undefined;
-
-        onEndLoseGame();
-        return;
-      }
+    if (!availableBullet) {
+      return;
     }
-  }, 20);
+
+    availableBullet.visible = true;
+    bulletsleft--;
+    bullets.textContent = `Bullets: ${bulletsleft} / ${maxBullets}`;
+
+    availableBullet.x = spaceship.x;
+    availableBullet.y = spaceship.y - 50;
+
+    const bulletInterval = setInterval(() => {
+      availableBullet.y -= 10;
+
+      if (availableBullet.y < 0) {
+        clearInterval(bulletInterval);
+        countBullets.shift();
+        // availableBullet.visible = false;
+
+        if (countBullets.length === 0) {
+          clearInterval(timerInterval);
+          timerInterval = undefined;
+
+          onEndLoseGame();
+          return;
+        }
+      }
+    }, 20);
+  }
 }
+
 // додаємо таймер
 function addTimer(): void {
   timeleft = 60;
@@ -483,10 +497,7 @@ function resetGameState(): void {
 
   bulletsleft = maxBullets;
   bullets.textContent = `Bullets: ${bulletsleft} / ${maxBullets}`;
-  countBullets.forEach((bullet) => {
-    bullet.visible = false;
-    bullet.y = app.screen.height - 60;
-  });
+  countBullets = [];
 }
 
 //=============================== start level 2 ===================================
@@ -500,6 +511,7 @@ function onNextLevel(): void {
 
   setTimeout(() => {
     addBoss("/src/img/boss.webp");
+    setupSpaceShip();
   }, 1000);
 
   setTimeout(() => {
